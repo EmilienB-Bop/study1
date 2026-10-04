@@ -1,12 +1,13 @@
-// ─── INITIALISATION FIREBASE ────────────────────────────────────────────────
+// ─── INITIALISATION FIREBASE (OPEN SCIENCE EXPERIMENT) ─────────────────────
 const firebaseConfig = {
-  apiKey: "AIzaSyARylqUQyt349rBoeOqw228NKgzpi-l8LQ",
-  authDomain: "td-brochet.firebaseapp.com",
-  databaseURL: "https://td-brochet-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "td-brochet",
-  storageBucket: "td-brochet.firebasestorage.app",
-  messagingSenderId: "1097243892502",
-  appId: "1:1097243892502:web:8921559c8fd8ba10308e37"
+  apiKey: "AIzaSyAtYUFAb74OhgUyoVumAsHjuxqgGjRAD7M",
+  authDomain: "open-science-experiment.firebaseapp.com",
+  databaseURL: "https://open-science-experiment-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "open-science-experiment",
+  storageBucket: "open-science-experiment.firebasestorage.app",
+  messagingSenderId: "76300119346",
+  appId: "1:76300119346:web:972217d031b6f7db0f7b2b",
+  measurementId: "G-Y3TV5Z234G"
 };
 
 if (!firebase.apps.length) {
@@ -14,7 +15,7 @@ if (!firebase.apps.length) {
 }
 const db = firebase.database();
 
-// ID sujet unique : timestamp + chaîne aléatoire
+// ID sujet unique et anonyme : horodatage + chaîne aléatoire
 const subject_id = "sub_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
 
 // ─── INITIALISATION JSPSYCH & SURVEILLANCE DU FOCUS ─────────────────────────
@@ -81,7 +82,7 @@ if (isMobileDevice) {
 
   let measuredRefreshRate = 60;
 
-  // Enregistrement des propriétés système & expérimentales
+  // Enregistrement des propriétés globales
   jsPsych.data.addProperties({
     subject_id: subject_id,
     variant: selectedVariant,
@@ -687,10 +688,11 @@ if (isMobileDevice) {
 
       const experimentData = jsPsych.data.get().values();
 
+      // Envoi vers le nœud "experiment_data/sub_..."
       db.ref("experiment_data/" + subject_id).set(experimentData)
         .then(() => {
           const status = document.getElementById("save-status");
-          if (status) status.innerHTML = "✅ Données enregistrées avec succès ! Redirection...";
+          if (status) status.innerHTML = "✅ Données enregistrées avec succès ! Redirection en cours...";
           setTimeout(() => {
             window.location.href = "https://www.univ-tlse2.fr/";
           }, 2000);
@@ -698,11 +700,11 @@ if (isMobileDevice) {
         .catch((error) => {
           console.error("Erreur de sauvegarde :", error);
           const status = document.getElementById("save-status");
-          if (status) status.innerHTML = "⚠️ Une erreur réseau est survenue lors de l'envoi. Vous pouvez fermer cette page.";
+          if (status) status.innerHTML = "⚠️ Une erreur réseau est survenue lors de l'envoi. Vous pouvez fermer cette fenêtre.";
         });
     }
   });
 
-  // ─── LANCEMENT ──────────────────────────────────────────────────────────────
+  // ─── LANCEMENT DIRECT ───────────────────────────────────────────────────────
   jsPsych.run(timeline);
 }
