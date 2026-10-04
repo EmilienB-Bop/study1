@@ -18,18 +18,6 @@ const db = firebase.database();
 // ID sujet unique et anonyme : horodatage + chaîne aléatoire
 const subject_id = "sub_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
 
-// ─── INITIALISATION JSPSYCH & SURVEILLANCE DU FOCUS ─────────────────────────
-var jsPsych = initJsPsych({
-  use_webaudio: false,
-  on_interaction_data_update: function (data) {
-    if (data.event === "blur" || data.event === "fullscreenexit") {
-      console.warn("Attention : focus perdu ou plein écran quitté à t=" + data.time);
-    }
-  }
-});
-
-var timeline = [];
-
 // ─── DÉTECTION MOBILE ROBUSTE (COMPATIBLE PC PORTABLES TACTILES) ────────────
 function isComputer() {
   const ua = navigator.userAgent.toLowerCase();
@@ -54,24 +42,40 @@ function isComputer() {
   return true;
 }
 
-const isMobileDevice = !isComputer();
-
-if (isMobileDevice) {
-  timeline.push({
-    type: jsPsychHtmlButtonResponse,
-    stimulus: `<div style="text-align:center;padding:40px;color:#fff;font-family:sans-serif;">
-      <p><strong>Appareil non compatible</strong></p>
-      <p>Pour passer cette expérience, il vous faut impérativement être sur un ordinateur (clavier et souris).</p>
-      <p>Merci de renouveler l'expérience depuis un ordinateur.</p>
-    </div>`,
-    choices: ["Quitter"],
-    on_finish: function () {
-      window.location.href = "https://www.univ-tlse2.fr/";
-    }
-  });
+// ─── BLOCAGE IMMÉDIAT EN CAS D'APPAREIL MOBILE / TABLETTE ───────────────────
+if (!isComputer()) {
+  document.body.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;box-sizing:border-box;text-align:center;font-family:system-ui,-apple-system,sans-serif;color:#ffffff;background-color:#525252;">
+      <div style="max-width:480px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.15);padding:30px 20px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <div style="font-size:3rem;margin-bottom:12px;">💻</div>
+        <h2 style="margin:0 0 12px 0;font-size:1.4rem;">Appareil non compatible</h2>
+        <p style="margin:0 0 20px 0;font-size:0.95rem;line-height:1.5;color:#e2e8f0;">
+          Pour la validité scientifique des mesures, cette étude nécessite impérativement un <strong>ordinateur</strong> équipé d'un clavier et d'une souris physique.
+        </p>
+        <p style="margin:0 0 24px 0;font-size:0.85rem;color:#cbd5e1;">
+          Merci de renouveler l'expérience depuis un ordinateur portable ou de bureau.
+        </p>
+        <button onclick="window.location.href='https://www.univ-tlse2.fr/'" style="padding:12px 24px;font-size:0.95rem;font-weight:600;color:#ffffff;background:#2563eb;border:none;border-radius:8px;cursor:pointer;">
+          Quitter l'expérience
+        </button>
+      </div>
+    </div>
+  `;
 } else {
 
-  // ─── 0. CONSENTEMENT LIBRE ET ÉCLAIRÉ ───────────────────────────────────────
+  // ─── INITIALISATION JSPSYCH & SURVEILLANCE DU FOCUS ───────────────────────
+  var jsPsych = initJsPsych({
+    use_webaudio: false,
+    on_interaction_data_update: function (data) {
+      if (data.event === "blur" || data.event === "fullscreenexit") {
+        console.warn("Attention : focus perdu ou plein écran quitté à t=" + data.time);
+      }
+    }
+  });
+
+  var timeline = [];
+
+  // ─── 0. CONSENTEMENT LIBRE ET ÉCLAIRÉ ─────────────────────────────────────
   timeline.push({
     type: jsPsychHtmlButtonResponse,
     stimulus: `
