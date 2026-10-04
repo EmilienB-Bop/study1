@@ -23,7 +23,7 @@ var jsPsych = initJsPsych({
   use_webaudio: false,
   on_interaction_data_update: function (data) {
     if (data.event === "blur" || data.event === "fullscreenexit") {
-      console.warn("Attention: focus perdu ou plein écran quitté à t=" + data.time);
+      console.warn("Attention : focus perdu ou plein écran quitté à t=" + data.time);
     }
   }
 });
@@ -52,6 +52,73 @@ if (isMobileDevice) {
     }
   });
 } else {
+
+  // ─── 0. CONSENTEMENT LIBRE ET ÉCLAIRÉ ───────────────────────────────────────
+  timeline.push({
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div style="max-width:780px;margin:20px auto;text-align:left;line-height:1.55;font-size:0.88rem;background:rgba(255,255,255,0.06);padding:24px;border-radius:12px;border:1px solid #444;max-height:70vh;overflow-y:auto;">
+        <h2 style="text-align:center;font-size:1.25rem;margin-top:0;color:#fff;">Formulaire d'information et de consentement libre et éclairé</h2>
+        
+        <p>Avant d’accepter de participer à ce projet de recherche, veuillez prendre le temps de lire et de comprendre les renseignements qui suivent. Ce document vous explique le but de ce projet de recherche, ses procédures, avantages, risques et inconvénients. Nous vous rappelons que vous pouvez interrompre votre participation à l'étude à tout moment sans avoir à vous justifier. Un refus de participer n'aura aucune conséquence sur votre relation avec l'équipe de recherche qui la propose.</p>
+        
+        <p style="background:rgba(46,204,113,0.15);padding:8px 12px;border-radius:6px;border-left:4px solid #2ecc71;">
+          <strong>Avis éthique :</strong> Cette étude a reçu un avis favorable du Comité d’Éthique de la Recherche de Toulouse (avis n° 2026_1242, en date du 18/02/2026).
+        </p>
+
+        <p><strong>Responsable scientifique du projet :</strong><br>
+        Pr Céline Lemercier, Laboratoire CLLE & CNRS, Université Jean Jaurès, 5 allée Antonio Machado 31058 Toulouse cedex 9 (<a href="mailto:celine.lemercier@univ-tlse2.fr" style="color:#60a5fa;">celine.lemercier@univ-tlse2.fr</a>)<br>
+        <strong>Lieu de recherche :</strong> Université Toulouse Jean Jaurès, laboratoire CLLE.</p>
+
+        <p><strong>But du projet de recherche :</strong><br>
+        Ce projet vise à étudier quels sont les paramètres du stimulus qui permettent d’améliorer sa perception.</p>
+
+        <p><strong>Ce que l’on attend de vous (méthodologie) :</strong><br>
+        Si vous acceptez de participer à cette étude, vous êtes invité·e à répondre à quelques questions puis à compter le nombre de rebonds de formes qu’on vous aura préalablement décrites contre les bords de l’écran. Vous aurez 5 essais de 30 secondes pendant lesquels des formes se déplaceront sur l'écran en rebondissant contre les bords. On vous demandera de compter les rebonds d’un groupe précis de ces objets. L’expérience dure en tout environ 15 minutes (en incluant la lecture du présent consentement et le débriefing).</p>
+
+        <p><strong>Vos droits de vous retirer de la recherche en tout temps :</strong><br>
+        1. Votre contribution à cette recherche est volontaire.<br>
+        2. Vous pouvez cesser votre participation à tout moment, et cela n’aura aucune conséquence. Cependant, lorsque votre participation sera terminée, il ne sera plus possible de retirer vos données. En effet, la stricte anonymisation de cette étude rend impossible l'identification de vos réponses parmi l'ensemble des données recueillies.</p>
+
+        <p><strong>Confidentialité et respect de la vie privée :</strong><br>
+        Cette étude est strictement anonyme : aucune donnée nominative ou permettant de vous identifier directement ou indirectement n'est collectée.<br>
+        1. Les données obtenues seront traitées avec la plus entière confidentialité.<br>
+        2. Aucun renseignement ne sera dévoilé qui puisse révéler votre identité.<br>
+        3. Les données seront conservées dans un environnement sécurisé (seule l'équipe de recherche y a accès).</p>
+
+        <p><strong>Bénéfices :</strong><br>
+        • <em>Avancées scientifiques :</em> éclairage sur les paramètres du stimulus déterminants dans le taux de capture attentionnelle.<br>
+        • <em>Pour la société :</em> compréhension des mécanismes d'attention dans des environnements dynamiques à haut risque (aéronautique, conduite automobile).<br>
+        • <em>Pour le participant :</em> participation active à la démarche scientifique.</p>
+
+        <p><strong>Risques possibles :</strong><br>
+        Cette recherche n’implique aucun risque ou inconfort autre que ceux de la vie quotidienne face à un écran d'ordinateur.</p>
+
+        <p><strong>Diffusion des résultats & Contacts :</strong><br>
+        Les résultats seront communiqués lors de congrès scientifiques et publiés dans des revues internationales à comité de lecture. Vous pourrez prendre connaissance des résultats généraux en contactant le Pr Céline Lemercier.<br>
+        • Protection des données (DPO) : <a href="mailto:dr14-rgpd@cnrs.fr" style="color:#60a5fa;">dr14-rgpd@cnrs.fr</a><br>
+        • Comité d’Éthique de la Recherche (CER) : <a href="mailto:bureau-cer@univ-toulouse.fr" style="color:#60a5fa;">bureau-cer@univ-toulouse.fr</a></p>
+      </div>
+    `,
+    choices: ["Je refuse de participer", "J'ai lu, compris et j'accepte de participer"],
+    button_html: [
+      '<button class="jspsych-btn" style="background:#475569;color:#fff;margin:8px;">%choice%</button>',
+      '<button class="jspsych-btn" style="background:#2563eb;color:#fff;font-weight:bold;margin:8px;">%choice%</button>'
+    ],
+    on_finish: function (data) {
+      if (data.response === 0) {
+        // En cas de refus, arrêt immédiat de la timeline et redirection
+        jsPsych.abort(`<div style="text-align:center;padding:50px;color:#fff;font-family:sans-serif;">
+          <h3>Participation annulée</h3>
+          <p>Vous avez choisi de ne pas participer à cette étude. Aucune donnée n'a été enregistrée.</p>
+          <p>Redirection en cours...</p>
+        </div>`);
+        setTimeout(() => {
+          window.location.href = "https://www.univ-tlse2.fr/";
+        }, 2000);
+      }
+    }
+  });
 
   // ─── CONDITIONS US (UNEXPECTED STIMULUS) ───────────────────────────────────
   const speedcondition = Math.random() < 0.5 ? "slow" : "fast";
@@ -455,8 +522,8 @@ if (isMobileDevice) {
 
     timeline.push({
       type: jsPsychHtmlSliderResponse,
-      stimulus: "Êtes-vous sûr.e de votre réponse (OUI / NON) concernant la présence d'un objet inhabituel ?<br>Indiquez votre certitude.",
-      labels: ["NON, j'ai des doutes...", "OUI, je suis sûr.e !"],
+      stimulus: "Êtes-vous sûr·e de votre réponse (OUI / NON) concernant la présence d'un objet inhabituel ?<br>Indiquez votre certitude.",
+      labels: ["NON, j'ai des doutes...", "OUI, je suis sûr·e !"],
       min: 0, max: 100, step: 1, slider_start: 50, require_movement: true,
       data: { trial_number: trialNumber, question_type: "confiance_detection" },
       on_finish: function (data) { data.confidence_detection = data.response; }
