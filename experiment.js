@@ -30,10 +30,28 @@ var jsPsych = initJsPsych({
 
 var timeline = [];
 
-// ─── DÉTECTION MOBILE ────────────────────────────────────────────────────────
+// ─── DÉTECTION MOBILE ROBUSTE (COMPATIBLE PC PORTABLES TACTILES) ────────────
 function isComputer() {
-  const userAgent = navigator.userAgent.toLowerCase();
-  return !/mobile|android|iphone|ipad|tablet|touch/.test(userAgent);
+  const ua = navigator.userAgent.toLowerCase();
+
+  // 1. Détection classique par User-Agent
+  const isMobileUA = /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/.test(ua);
+
+  // 2. Détection géométrique : largeur et hauteur logiques de l'écran physique
+  const minDim = Math.min(window.screen.width, window.screen.height);
+  const maxDim = Math.max(window.screen.width, window.screen.height);
+
+  // Un smartphone ne dépasse pas ces dimensions, même avec "Version ordinateur" activée
+  const isMobileDimensions = (minDim < 600 || maxDim < 950);
+
+  // 3. Détection spécifique tablettes / iPad sous iPadOS qui s'annoncent comme MacIntel
+  const isIPad = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && minDim < 850);
+
+  if (isMobileUA || isMobileDimensions || isIPad) {
+    return false;
+  }
+
+  return true;
 }
 
 const isMobileDevice = !isComputer();
@@ -41,7 +59,7 @@ const isMobileDevice = !isComputer();
 if (isMobileDevice) {
   timeline.push({
     type: jsPsychHtmlButtonResponse,
-    stimulus: `<div style="text-align:center;padding:40px;">
+    stimulus: `<div style="text-align:center;padding:40px;color:#fff;font-family:sans-serif;">
       <p><strong>Appareil non compatible</strong></p>
       <p>Pour passer cette expérience, il vous faut impérativement être sur un ordinateur (clavier et souris).</p>
       <p>Merci de renouveler l'expérience depuis un ordinateur.</p>
@@ -57,7 +75,7 @@ if (isMobileDevice) {
   timeline.push({
     type: jsPsychHtmlButtonResponse,
     stimulus: `
-      <div style="max-width:780px;margin:20px auto;text-align:left;line-height:1.55;font-size:0.88rem;background:rgba(255,255,255,0.06);padding:24px;border-radius:12px;border:1px solid #444;max-height:70vh;overflow-y:auto;">
+      <div style="max-width:780px;margin:20px auto;text-align:left;line-height:1.55;font-size:0.88rem;background:rgba(255,255,255,0.06);padding:24px;border-radius:12px;border:1px solid #444;max-height:70vh;overflow-y:auto;color:#fff;">
         <h2 style="text-align:center;font-size:1.25rem;margin-top:0;color:#fff;">Formulaire d'information et de consentement libre et éclairé</h2>
         
         <p>Avant d’accepter de participer à ce projet de recherche, veuillez prendre le temps de lire et de comprendre les renseignements qui suivent. Ce document vous explique le but de ce projet de recherche, ses procédures, avantages, risques et inconvénients. Nous vous rappelons que vous pouvez interrompre votre participation à l'étude à tout moment sans avoir à vous justifier. Un refus de participer n'aura aucune conséquence sur votre relation avec l'équipe de recherche qui la propose.</p>
@@ -107,7 +125,6 @@ if (isMobileDevice) {
     ],
     on_finish: function (data) {
       if (data.response === 0) {
-        // En cas de refus, arrêt immédiat de la timeline et redirection
         jsPsych.abort(`<div style="text-align:center;padding:50px;color:#fff;font-family:sans-serif;">
           <h3>Participation annulée</h3>
           <p>Vous avez choisi de ne pas participer à cette étude. Aucune donnée n'a été enregistrée.</p>
@@ -169,7 +186,7 @@ if (isMobileDevice) {
     type: jsPsychFullscreen,
     fullscreen_mode: true,
     message: `
-      <div style="max-width:650px;margin:auto;text-align:center;line-height:1.6;">
+      <div style="max-width:650px;margin:auto;text-align:center;line-height:1.6;color:#fff;">
         <p><strong>Bienvenue dans cette étude !</strong></p>
         <p>Pour la validité des mesures, merci de vous installer confortablement à <strong>environ une longueur de bras de votre écran</strong> (50 à 60 cm) et de ne plus vous déplacer jusqu'à la fin.</p>
         <p>L'expérience va démarrer en plein écran.</p>
@@ -744,7 +761,7 @@ if (isMobileDevice) {
   timeline.push({
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `
-      <div style="max-width:600px;margin:auto;text-align:center;line-height:1.6;padding-top:40px;">
+      <div style="max-width:600px;margin:auto;text-align:center;line-height:1.6;padding-top:40px;color:#fff;">
         <h2>Merci pour votre participation !</h2>
         <p id="save-status">Enregistrement des résultats en cours, veuillez patienter...</p>
       </div>
