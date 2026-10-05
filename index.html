@@ -22,7 +22,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <style>
-    /* 1. Fond général et texte de base */
+    /* 1. Fond et typographie générale */
     body {
       background-color: #ffffff !important;
       color: #0f172a !important;
@@ -39,9 +39,11 @@
     .jspsych-content {
       max-width: 850px;
       color: #0f172a !important;
+      /* On s'assure que le conteneur principal reste bien centré */
+      margin: auto;
     }
 
-    /* 2. Paragraphes, titres, consignes */
+    /* 2. Textes et labels bien lisibles en sombre */
     .jspsych-content p,
     .jspsych-content h1,
     .jspsych-content h2,
@@ -51,11 +53,16 @@
       color: #0f172a !important;
     }
 
-    /* 3. Boîtes de formulaire et options radio (survey-multi-choice) */
+    /* 3. Restauration de l'alignement natif jsPsych pour les questions */
     .jspsych-survey-multi-choice-question,
     .jspsych-survey-text-question {
-      text-align: left;
       margin-bottom: 2em;
+    }
+
+    .jspsych-survey-multi-choice-option {
+      /* Conserve l'alignement propre des puces radio */
+      display: inline-block;
+      margin: 0 10px;
     }
 
     .jspsych-survey-multi-choice-text,
@@ -64,7 +71,7 @@
       cursor: pointer;
     }
 
-    /* 4. Champs de saisie texte (nombre de rebonds) */
+    /* 4. Champs de saisie texte (centrés et lisibles) */
     input[type="text"],
     input[type="number"] {
       background-color: #f8fafc !important;
@@ -73,6 +80,7 @@
       border-radius: 6px;
       padding: 8px 12px;
       font-size: 1rem;
+      text-align: center;
     }
 
     input[type="text"]:focus,
@@ -82,7 +90,7 @@
       background-color: #ffffff !important;
     }
 
-    /* 5. Sliders et réglettes de confiance */
+    /* 5. Réglettes de confiance */
     .jspsych-slider {
       background-color: #cbd5e1 !important;
     }
@@ -93,7 +101,7 @@
       font-weight: 500;
     }
 
-    /* 6. Formulaire de consentement (fond clair encadré) */
+    /* 6. Formulaire de consentement */
     div[style*="background:rgba(255,255,255,0.06)"],
     div[style*="max-height:70vh"] {
       background-color: #f8fafc !important;
@@ -105,7 +113,7 @@
       color: #1e293b !important;
     }
 
-    /* 7. Boutons d'action */
+    /* 7. Boutons */
     .jspsych-btn {
       color: #ffffff !important;
       background-color: #2563eb;
@@ -127,7 +135,13 @@
       cursor: not-allowed;
     }
 
-    /* 8. Tuiles de choix de formes et couleurs */
+    /* 8. Options de formes et couleurs */
+    #shape-options, #color-options, #size-options {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+    }
+
     #shape-options div span,
     #color-options div span,
     #size-options div span {
