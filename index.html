@@ -23,20 +23,32 @@
 
   <style>
     body {
-      background-color: #ffffff; 
-      color: #1e293b;           
+      background-color: #ffffff !important;
+      color: #0f172a !important; /* Texte sombre très contrasté */
       font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
       padding: 0;
     }
+
+    /* Force jsPsych et l'ensemble de ses éléments textuels en sombre */
+    .jspsych-display-element,
+    .jspsych-content,
+    .jspsych-content * {
+      color: #0f172a !important;
+    }
+
     .jspsych-content {
       max-width: 850px;
     }
-   
-    .jspsych-content p, 
-    .jspsych-content h2, 
+
+    /* Conserve des bordures et fonds de boîtes lisibles sur fond blanc */
     .jspsych-content div {
-      color: inherit;
+      border-color: #cbd5e1 !important;
+    }
+
+    /* Boutons lisibles avec texte blanc garanti */
+    .jspsych-btn {
+      color: #ffffff !important;
     }
   </style>
 </head>
