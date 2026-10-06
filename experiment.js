@@ -21,25 +21,13 @@ const subject_id = "sub_" + Date.now() + "_" + Math.random().toString(36).substr
 // ─── DÉTECTION MOBILE ROBUSTE (COMPATIBLE PC PORTABLES TACTILES) ────────────
 function isComputer() {
   const ua = navigator.userAgent.toLowerCase();
-
-  // 1. Détection classique par User-Agent
   const isMobileUA = /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/.test(ua);
-
-  // 2. Détection géométrique : largeur et hauteur logiques de l'écran physique
   const minDim = Math.min(window.screen.width, window.screen.height);
   const maxDim = Math.max(window.screen.width, window.screen.height);
-
-  // Un smartphone ne dépasse pas ces dimensions, même avec "Version ordinateur" activée
   const isMobileDimensions = (minDim < 600 || maxDim < 950);
-
-  // 3. Détection spécifique tablettes / iPad sous iPadOS qui s'annoncent comme MacIntel
   const isIPad = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && minDim < 850);
 
-  if (isMobileUA || isMobileDimensions || isIPad) {
-    return false;
-  }
-
-  return true;
+  return !(isMobileUA || isMobileDimensions || isIPad);
 }
 
 // ─── BLOCAGE IMMÉDIAT EN CAS D'APPAREIL MOBILE / TABLETTE ───────────────────
@@ -64,7 +52,7 @@ if (!isComputer()) {
 } else {
 
   // ─── INITIALISATION JSPSYCH & SURVEILLANCE DU FOCUS ───────────────────────
-  var jsPsych = initJsPsych({
+  const jsPsych = initJsPsych({
     use_webaudio: false,
     on_interaction_data_update: function (data) {
       if (data.event === "blur" || data.event === "fullscreenexit") {
@@ -73,7 +61,7 @@ if (!isComputer()) {
     }
   });
 
-  var timeline = [];
+  const timeline = [];
 
   // Indicateur bot global
   let botFlag = false;
@@ -131,14 +119,16 @@ if (!isComputer()) {
     ],
     on_finish: function (data) {
       if (data.response === 0) {
-        jsPsych.abort(`<div style="text-align:center;padding:50px;color:#fff;font-family:sans-serif;">
-          <h3>Participation annulée</h3>
-          <p>Vous avez choisi de ne pas participer à cette étude. Aucune donnée n'a été enregistrée.</p>
-          <p>Redirection en cours...</p>
-        </div>`);
+        document.body.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;text-align:center;font-family:system-ui,sans-serif;color:#ffffff;background:#525252;">
+            <h2>Participation annulée</h2>
+            <p>Vous avez choisi de ne pas participer à cette étude. Aucune donnée n'a été enregistrée.</p>
+            <p style="color:#cbd5e1;">Redirection en cours vers l'université...</p>
+          </div>
+        `;
         setTimeout(() => {
           window.location.href = "https://www.univ-tlse2.fr/";
-        }, 2000);
+        }, 1500);
       }
     }
   });
@@ -166,13 +156,12 @@ if (!isComputer()) {
   const unexpectedColor    = selectedVariantObj.color;
   const unexpectedSizeMode = selectedVariantObj.size;
 
-  const BASE_RADIUS = 20;       // rayon en pixels d'origine
+  const BASE_RADIUS = 20;       // rayon en pixels
   const PULSE_AMPLITUDE = 0.10; // ±10%
   const PULSE_FREQ = 2;         // 2 Hz
 
   let measuredRefreshRate = 60;
 
-  // Enregistrement des propriétés globales
   jsPsych.data.addProperties({
     subject_id: subject_id,
     variant: selectedVariant,
@@ -201,7 +190,7 @@ if (!isComputer()) {
     button_label: "Passer en plein écran"
   });
 
-  // ─── 2. MESURE DU TAUX DE RAFRAÎCHISSEMENT (60 FRAMES) ──────────────────────
+  // ─── 2. MESURE DU TAUX DE RAFRAÎCHISSEMENT ──────────────────────────────────
   timeline.push({
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `<p style="color:#ccc;">Initialisation de l'affichage en cours...</p>`,
@@ -224,7 +213,7 @@ if (!isComputer()) {
     }
   });
 
-  // ─── 3. QUESTIONS DÉMOGRAPHIQUES & HONEYPOT ANTI-BOT ────────────────────────
+  // ─── 3. QUESTIONS DÉMOGRAPHIQUES & HONEYPOT ────────────────────────────────
   timeline.push({
     type: jsPsychSurveyMultiChoice,
     questions: [
@@ -243,7 +232,6 @@ if (!isComputer()) {
       }
     ],
     preamble: `
-      <!-- Champ Honeypot invisible pour les humains -->
       <div style="opacity: 0; position: absolute; top: 0; left: -9999px; height: 0; width: 0; z-index: -1; overflow: hidden;" aria-hidden="true">
         <label for="user_contact_confirmation">Veuillez laisser ce champ vide si vous êtes un humain :</label>
         <input type="text" id="user_contact_confirmation" name="user_contact_confirmation" tabindex="-1" autocomplete="off">
@@ -254,14 +242,12 @@ if (!isComputer()) {
       data.participant_sex = data.response.Q0;
       data.participant_age = data.response.Q1;
 
-      // Détection honeypot
       const honeypotInput = document.getElementById("user_contact_confirmation");
       const honeypotVal = honeypotInput ? honeypotInput.value : "";
       if (honeypotVal && honeypotVal.trim() !== "") {
         botFlag = true;
       }
 
-      // Détection vitesse anormale (< 1200 ms)
       if (data.rt && data.rt < 1200) {
         botFlag = true;
       }
@@ -281,13 +267,13 @@ if (!isComputer()) {
       <p>Les ronds plus lents ne sont là que pour vous distraire !</p>
       <p>Voici un aperçu : les 4 rapides clignotent <span style="color:red;">en rouge</span>
       et les 4 lents <span style="color:lightgreen;">en vert</span>. Dans l'expérience réelle, ils resteront tous noirs.</p>
-      <canvas id="welcomeCanvas" width="400" height="300" style="width:400px;height:300px;border:1px solid #222;display:block;margin:10px auto;"></canvas>
+      <canvas id="welcomeCanvas" width="400" height="300" style="width:400px;height:300px;border:1px solid #222;display:block;margin:10px auto;background-color:#525252;"></canvas>
     `,
     choices: ["Commencer"],
     on_load: function () {
       const canvas = document.getElementById("welcomeCanvas");
+      if (!canvas) return;
       const ctx = canvas.getContext("2d");
-      canvas.style.backgroundColor = "#525252";
 
       const baseR = 10;
       const shapes = [];
@@ -326,13 +312,17 @@ if (!isComputer()) {
         });
       }
 
+      ctx.font = "20px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
       function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         shapes.forEach(s => {
           ctx.beginPath(); ctx.arc(s.x, s.y, s.radius / 2, 0, 2 * Math.PI);
           ctx.fillStyle = s.color; ctx.fill();
         });
-        ctx.fillStyle = "black"; ctx.font = "20px Arial"; ctx.textAlign = "center";
+        ctx.fillStyle = "black";
         ctx.fillText("+", canvas.width / 2, canvas.height / 2);
       }
 
@@ -347,14 +337,17 @@ if (!isComputer()) {
       }
       animate();
 
-      document.querySelector(".jspsych-btn").addEventListener("click", () => {
-        isPaused = true;
-        clearInterval(blinkTimer);
-      });
+      const btn = document.querySelector(".jspsych-btn");
+      if (btn) {
+        btn.addEventListener("click", () => {
+          isPaused = true;
+          clearInterval(blinkTimer);
+        });
+      }
     }
   });
 
-  // ─── 5. MOTEUR D'ANIMATION UNIFIÉ ───────────────────────────────────────────
+  // ─── 5. MOTEUR D'ANIMATION UNIFIÉ ET OPTIMISÉ ──────────────────────────────
   function buildTrackingTrial(config) {
     return {
       type: jsPsychHtmlKeyboardResponse,
@@ -368,8 +361,10 @@ if (!isComputer()) {
       },
       on_load: function () {
         const canvas = document.getElementById("animationCanvas");
+        if (!canvas) return;
         const ctx = canvas.getContext("2d");
         const baseR = BASE_RADIUS;
+        const halfR = baseR / 2;
 
         let rebGroup1 = 0;
         let rebGroup2 = 0;
@@ -386,20 +381,24 @@ if (!isComputer()) {
             y: canvas.height / 2 + (Math.random() - 0.5) * baseR * 2,
             dx: Math.cos(angle) * speed,
             dy: Math.sin(angle) * speed,
-            radius: baseR,
             group: fast ? 2 : 1,
             lastRebound: null
           });
         }
 
         const unexpected = {
-          x: canvas.width + BASE_RADIUS + 5,
+          x: canvas.width + baseR + 5,
           y: canvas.height / 2,
           speed: unexpectedSpeed
         };
 
-        let startTime = 0;
-        let lastFrame = 0;
+        // Configuration statique du contexte pour soulager le GPU
+        ctx.font = "40px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        let startTime = performance.now();
+        let lastFrame = startTime;
 
         function update(dt, elapsed) {
           shapes.forEach(s => {
@@ -407,15 +406,15 @@ if (!isComputer()) {
             s.y += s.dy * dt;
 
             // Rebonds horizontaux
-            if (s.x - s.radius / 2 <= 0) {
-              s.x = s.radius / 2;
+            if (s.x - halfR <= 0) {
+              s.x = halfR;
               if (s.lastRebound !== "left") {
                 s.dx *= -1;
                 s.lastRebound = "left";
                 if (s.group === 1) rebGroup1++; else rebGroup2++;
               }
-            } else if (s.x + s.radius / 2 >= canvas.width) {
-              s.x = canvas.width - s.radius / 2;
+            } else if (s.x + halfR >= canvas.width) {
+              s.x = canvas.width - halfR;
               if (s.lastRebound !== "right") {
                 s.dx *= -1;
                 s.lastRebound = "right";
@@ -426,15 +425,15 @@ if (!isComputer()) {
             }
 
             // Rebonds verticaux
-            if (s.y - s.radius / 2 <= 0) {
-              s.y = s.radius / 2;
+            if (s.y - halfR <= 0) {
+              s.y = halfR;
               if (s.lastRebound !== "top") {
                 s.dy *= -1;
                 s.lastRebound = "top";
                 if (s.group === 1) rebGroup1++; else rebGroup2++;
               }
-            } else if (s.y + s.radius / 2 >= canvas.height) {
-              s.y = canvas.height - s.radius / 2;
+            } else if (s.y + halfR >= canvas.height) {
+              s.y = canvas.height - halfR;
               if (s.lastRebound !== "bottom") {
                 s.dy *= -1;
                 s.lastRebound = "bottom";
@@ -445,7 +444,7 @@ if (!isComputer()) {
             }
           });
 
-          // Progression de l'US
+          // Trajectoire de l'US
           if (config.allowUS && hasUnexpected && elapsed > 10000) {
             unexpected.x += unexpected.speed * dt;
           }
@@ -456,17 +455,17 @@ if (!isComputer()) {
 
           // Cibles régulières
           ctx.fillStyle = "black";
-          for (let i = 0; i < shapes.length; i++) {
+          shapes.forEach(s => {
             ctx.beginPath();
-            ctx.arc(shapes[i].x, shapes[i].y, shapes[i].radius / 2, 0, Math.PI * 2);
+            ctx.arc(s.x, s.y, halfR, 0, Math.PI * 2);
             ctx.fill();
-          }
+          });
 
-          // Dessin de l'US
+          // Rendu de l'US uniquement s'il est actif
           if (config.allowUS && hasUnexpected && elapsed > 10000) {
-            let r = BASE_RADIUS / 2;
+            let r = halfR;
             if (unexpectedSizeMode === 'pulsing') {
-              r = (BASE_RADIUS * (1 + PULSE_AMPLITUDE * Math.sin(2 * Math.PI * PULSE_FREQ * (elapsed / 1000)))) / 2;
+              r = (baseR * (1 + PULSE_AMPLITUDE * Math.sin(4 * Math.PI * (elapsed / 1000)))) / 2;
             }
             ctx.fillStyle = unexpectedColor;
             if (unexpectedShape === 'circle') {
@@ -485,9 +484,6 @@ if (!isComputer()) {
 
           // Croix de fixation
           ctx.fillStyle = "black";
-          ctx.font = "40px Arial";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
           ctx.fillText("+", canvas.width / 2, canvas.height / 2);
         }
 
@@ -495,6 +491,7 @@ if (!isComputer()) {
           if (!isRunning) return;
           const delta = now - lastFrame;
 
+          // Détection de dropped frames (> 25 ms)
           if (delta > 25) {
             droppedFrames++;
           }
@@ -815,7 +812,6 @@ if (!isComputer()) {
         interactions: jsPsych.data.getInteractionData().values()
       };
 
-      // Envoi groupé vers le nœud "experiment_data/sub_..."
       db.ref("experiment_data/" + subject_id).set(payload)
         .then(() => {
           const status = document.getElementById("save-status");
