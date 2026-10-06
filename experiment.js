@@ -75,6 +75,9 @@ if (!isComputer()) {
 
   var timeline = [];
 
+  // Indicateur bot global
+  let botFlag = false;
+
   // ─── 0. CONSENTEMENT LIBRE ET ÉCLAIRÉ ─────────────────────────────────────
   timeline.push({
     type: jsPsychHtmlButtonResponse,
@@ -221,19 +224,50 @@ if (!isComputer()) {
     }
   });
 
-  // ─── 3. QUESTIONS DÉMOGRAPHIQUES ────────────────────────────────────────────
+  // ─── 3. QUESTIONS DÉMOGRAPHIQUES & HONEYPOT ANTI-BOT ────────────────────────
   timeline.push({
     type: jsPsychSurveyMultiChoice,
-    questions: [{ prompt: "Quel est votre sexe ?", options: ["Homme", "Femme", "Non-binaire", "Autre", "Préfère ne pas répondre"], required: true }],
+    questions: [
+      { 
+        prompt: "<strong>Quel est votre sexe ?</strong>", 
+        options: ["Homme", "Femme", "Non-binaire", "Autre", "Préfère ne pas répondre"], 
+        required: true 
+      },
+      { 
+        prompt: `
+          <hr style="border:0; border-top:1px solid rgba(255,255,255,0.2); margin:32px 0 24px 0;">
+          <strong>Quelle est votre tranche d'âge ?</strong>
+        `, 
+        options: ["Moins de 18 ans", "18-25 ans", "26-35 ans", "36-50 ans", "51 ans et plus"], 
+        required: true 
+      }
+    ],
+    preamble: `
+      <!-- Champ Honeypot invisible pour les humains -->
+      <div style="opacity: 0; position: absolute; top: 0; left: -9999px; height: 0; width: 0; z-index: -1; overflow: hidden;" aria-hidden="true">
+        <label for="user_contact_confirmation">Veuillez laisser ce champ vide si vous êtes un humain :</label>
+        <input type="text" id="user_contact_confirmation" name="user_contact_confirmation" tabindex="-1" autocomplete="off">
+      </div>
+    `,
     button_label: "Valider",
-    on_finish: function (data) { data.participant_sex = data.response.Q0; }
-  });
+    on_finish: function (data) {
+      data.participant_sex = data.response.Q0;
+      data.participant_age = data.response.Q1;
 
-  timeline.push({
-    type: jsPsychSurveyMultiChoice,
-    questions: [{ prompt: "Quelle est votre tranche d'âge ?", options: ["Moins de 18 ans", "18-25 ans", "26-35 ans", "36-50 ans", "51 ans et plus"], required: true }],
-    button_label: "Valider",
-    on_finish: function (data) { data.participant_age = data.response.Q0; }
+      // Détection honeypot
+      const honeypotInput = document.getElementById("user_contact_confirmation");
+      const honeypotVal = honeypotInput ? honeypotInput.value : "";
+      if (honeypotVal && honeypotVal.trim() !== "") {
+        botFlag = true;
+      }
+
+      // Détection vitesse anormale (< 1200 ms)
+      if (data.rt && data.rt < 1200) {
+        botFlag = true;
+      }
+
+      jsPsych.data.addProperties({ is_bot_detected: botFlag });
+    }
   });
 
   // ─── 4. ÉCRAN D'INSTRUCTIONS & DÉMONSTRATION ────────────────────────────────
@@ -298,7 +332,7 @@ if (!isComputer()) {
           ctx.beginPath(); ctx.arc(s.x, s.y, s.radius / 2, 0, 2 * Math.PI);
           ctx.fillStyle = s.color; ctx.fill();
         });
-        ctx.fillStyle = "black"; ctx.font = "20px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "black"; ctx.font = "20px Arial"; ctx.textAlign = "center";
         ctx.fillText("+", canvas.width / 2, canvas.height / 2);
       }
 
@@ -760,7 +794,7 @@ if (!isComputer()) {
     on_finish: function (data) { data.participant_prior_knowledge = data.response.Q0; }
   });
 
-  // Sauvegarde Firebase en fin de passation
+  // ─── 10. SAUVEGARDE FIREBASE & EXPORT INTERACTIONS ──────────────────────────
   timeline.push({
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `
@@ -770,24 +804,33 @@ if (!isComputer()) {
       </div>
     `,
     choices: "NO_KEYS",
+    trial_duration: 3000,
     on_load: function () {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 
-      const experimentData = jsPsych.data.get().values();
+      const payload = {
+        subject_id: subject_id,
+        is_bot_flag: botFlag,
+        trials: jsPsych.data.get().values(),
+        interactions: jsPsych.data.getInteractionData().values()
+      };
 
-      // Envoi vers le nœud "experiment_data/sub_..."
-      db.ref("experiment_data/" + subject_id).set(experimentData)
+      // Envoi groupé vers le nœud "experiment_data/sub_..."
+      db.ref("experiment_data/" + subject_id).set(payload)
         .then(() => {
           const status = document.getElementById("save-status");
           if (status) status.innerHTML = "✅ Données enregistrées avec succès ! Redirection en cours...";
           setTimeout(() => {
             window.location.href = "https://www.univ-tlse2.fr/";
-          }, 2000);
+          }, 1500);
         })
         .catch((error) => {
           console.error("Erreur de sauvegarde :", error);
           const status = document.getElementById("save-status");
           if (status) status.innerHTML = "⚠️ Une erreur réseau est survenue lors de l'envoi. Vous pouvez fermer cette fenêtre.";
+          setTimeout(() => {
+            window.location.href = "https://www.univ-tlse2.fr/";
+          }, 2000);
         });
     }
   });
